@@ -1,0 +1,67 @@
+#!/bin/bash
+
+#This script automates the configuration of the gpg agent to cache passphrases.
+#This script was used and tested on a CLI server.
+#You can use it on a server to automate a task that requires interaction with GPG.
+#We assume here that the private/public key pair has been generated and that the folder ~/.gnupg exists.
+#Tested with gpg-agent version 2.2.12
+
+set -e
+
+#Check run at non superuser
+
+if [[ "$EUID" -eq 0 ]]; then
+	echo -e "Run this script as non root"
+	exit 1
+fi
+
+#Create ~/.xinitrc file for starting agent at server boot
+
+cat << EOF > ~/.xinitrc
+GPGAGENTINFOFILE=~/.gpg-agent-info
+if [ -f $GPGAGENTINFOFILE ]; then
+    . $GPGAGENTINFOFILE
+fi
+gpg-agent
+if [ $? -ne 0 ]; then
+    eval $(gpg-agent --daemon --write-env-file $GPGAGENTINFOFILE)
+fi
+EOF
+
+#Export GPG_TTY variable in ~/.bashrc
+
+cat << EOF >> ~/.bashrc
+GPG_TTY=$(tty)
+export GPG_TTY
+
+#Configure agent options use
+
+cat << EOF > ~/.gnupg/gpg-agent.conf
+default-cache-ttl 315360000
+max-cache-ttl 315360000
+pinentry-program /usr/bin/pinentry-curses
+allow-preset-passphrase
+EOF
+
+#default-cache-ttl sets the default cache phrase length for the passphrase (in seconds, here 10 years)
+#max-cache-ttl sets the maximum cache phrase length for the passphrase (in seconds, here 10 years)
+#pinentry-program defines the software to use to enter the passphrase
+#allow-preset-passphrase reads the previously used stdin entry
+
+cat << EOF > ~/.gnupg/gpg.conf
+use-agent
+EOF
+
+#Configure truslist file for trusted public key (adapting with your configuration)
+cat <<EOF > ~/.gnupg/trustlist.txt
+**************************018D0A59B75A9CD8 S
+EOF
+
+#See : https://www.gnupg.org/documentation/manuals/gnupg/Agent-Configuration.html#Agent-Configuration
+#For details for gpg-agent.conf gpg.conf trustlist.txt files
+
+#Start agent
+gpg-connect-agent /bye
+
+#Once this configuration is done, enter your passphrase and disconnect from your SSH session for 10 minutes.
+#Rerun a command requiring interaction with GPG, if the phrase is not asked again, your configuration is functional.
