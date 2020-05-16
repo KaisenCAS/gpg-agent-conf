@@ -1,4 +1,5 @@
-gpg-agent configuration and automation passphrase entry.
+### AUTHOR
+
 Copyright (C) Kevin Chevreuil - Kaisen
 
 ### GNU AFFERO GENERAL PUBLIC LICENSE
