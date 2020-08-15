@@ -57,7 +57,7 @@ EOF
 
 rm ~/.gnupg/S.* || true
 rm /run/user/1000/gnupg/S.* || true
-ps -ef | grep /usr/bin/gpg-agent | grep -v grep | awk '{print $2}' | xargs kill
+ps -ef | grep gpg-agent | grep -v grep | awk '{print $2}' | xargs kill
 gpg-agent --daemon
 
 #Crontab task for launch gpg-agent in daemon mode after reboot
