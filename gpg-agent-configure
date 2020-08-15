@@ -58,11 +58,10 @@ EOF
 rm ~/.gnupg/S.* || true
 rm /run/user/1000/gnupg/S.* || true
 ps -ef | grep /usr/bin/gpg-agent | grep -v grep | awk '{print $2}' | xargs kill
-eval $(gpg-agent --daemon)
+gpg-agent --daemon
 
 #Crontab task for launch gpg-agent in daemon mode after reboot
 crontab -l | { cat; echo "@reboot rm /run/user/1000/gnupg/S.* || true;rm ~/.gnupg/S.* || true;gpg-agent --daemon" } | crontab -
 
 #Once this configuration is done, enter your passphrase and disconnect from your SSH session for 10 minutes.
 #Rerun a command requiring interaction with GPG, if the phrase is not asked again, your configuration is functional.
-
