@@ -11,43 +11,35 @@ set -e
 #Check run at no superuser
 
 if [[ "$EUID" -eq 0 ]]; then
-	echo -e "Run this script as non root"
+	echo -e "Run this script as no root"
 	exit 1
 fi
-
-#Create ~/.xinitrc file for starting agent at server boot
-
-cat << EOF > ~/.xinitrc
-GPGAGENTINFOFILE=~/.gpg-agent-info
-if [ -f $GPGAGENTINFOFILE ]; then
-    . $GPGAGENTINFOFILE
-fi
-gpg-agent
-if [ $? -ne 0 ]; then
-    eval $(gpg-agent --daemon --write-env-file $GPGAGENTINFOFILE)
-fi
-EOF
 
 #Export GPG_TTY variable in ~/.bashrc
 
 cat << EOF >> ~/.bashrc
+#GPG agent
 GPG_TTY=$(tty)
 export GPG_TTY
 EOF
 
 #Configure agent options use
 
+mkdir ~/.gnupg || true
+touch ~/.gnupg/gpg-agent.conf
 cat << EOF > ~/.gnupg/gpg-agent.conf
 default-cache-ttl 315360000
 max-cache-ttl 315360000
 pinentry-program /usr/bin/pinentry-curses
 allow-preset-passphrase
+pinentry-timeout 0
 EOF
 
 #default-cache-ttl sets the default cache phrase length for the passphrase (in seconds, here 10 years)
 #max-cache-ttl sets the maximum cache phrase length for the passphrase (in seconds, here 10 years)
 #pinentry-program defines the software to use to enter the passphrase
 #allow-preset-passphrase reads the previously used stdin entry
+#pinentry-timeout 0 to disable timeout in pintentry
 
 cat << EOF > ~/.gnupg/gpg.conf
 use-agent
@@ -61,8 +53,16 @@ EOF
 #See : https://www.gnupg.org/documentation/manuals/gnupg/Agent-Configuration.html#Agent-Configuration
 #For details for gpg-agent.conf gpg.conf trustlist.txt files
 
-#Start agent
-gpg-connect-agent /bye
+#Kill gpg-agent launch in supervised mode to launch at daemon mode
+
+rm ~/.gnupg/S.* || true
+rm /run/user/1000/gnupg/S.* || true
+ps -ef | grep /usr/bin/gpg-agent | grep -v grep | awk '{print $2}' | xargs kill
+eval $(gpg-agent --daemon)
+
+#Crontab task for launch gpg-agent in daemon mode after reboot
+crontab -l | { cat; echo "@reboot rm /run/user/1000/gnupg/S.* || true;rm ~/.gnupg/S.* || true;gpg-agent --daemon" } | crontab -
 
 #Once this configuration is done, enter your passphrase and disconnect from your SSH session for 10 minutes.
 #Rerun a command requiring interaction with GPG, if the phrase is not asked again, your configuration is functional.
+
