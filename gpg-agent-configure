@@ -91,6 +91,7 @@ case $1 in
 	explain
 	;;
 esac
+EOF
 
 chmod 0755 /opt/gpg-agent
 chown user:user /opt/gpg-agent
