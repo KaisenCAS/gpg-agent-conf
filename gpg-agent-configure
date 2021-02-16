@@ -53,10 +53,25 @@ EOF
 rm ~/.gnupg/S.* || true
 rm /run/user/1000/gnupg/S.* || true
 ps -ef | grep gpg-agent | grep -v grep | awk '{print $2}' | xargs kill || true
-gpg-agent --daemon
 
-#Crontab task for launch gpg-agent in daemon mode after reboot
-crontab -l | { cat; echo "@reboot gpg-agent --daemon" } | crontab -
+cat << EOF > /etc/systemd/system/gpg-agent.service
+[Unit]
+Description=Mise en cache de clé GPG
+
+[Service]
+User=kaisen
+Group=kaisen
+Type=forking
+RemainAfterExit=yes
+ExecStart=gpg-agent --daemon
+ExecStop=gpgconf --kill gpg-agent
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable gpg-agent
+systemctl start gpg-agent
 
 #Once this configuration is done, enter your passphrase and disconnect from your SSH session for 10 minutes.
 #Rerun a command requiring interaction with GPG, if the phrase is not asked again, your configuration is functional.
