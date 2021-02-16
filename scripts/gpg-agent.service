@@ -1,0 +1,13 @@
+[Unit]
+Description=Mise en cache de clé GPG
+
+[Service]
+User=kaisen
+Group=kaisen
+Type=forking
+RemainAfterExit=yes
+ExecStart=gpg-agent --daemon
+ExecStop=gpgconf --kill gpg-agent
+
+[Install]
+WantedBy=multi-user.target
