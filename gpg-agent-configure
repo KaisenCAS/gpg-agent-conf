@@ -90,6 +90,9 @@ case $1 in
 esac
 EOF
 
+chmod 0755 /opt/gpg-agent
+chown user:user /opt/gpg-agent
+
 cat << EOF > /etc/systemd/system/gpg-agent.service
 [Unit]
 Description=Mise en cache de clé GPG

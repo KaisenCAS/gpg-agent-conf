@@ -6,8 +6,8 @@ User=kaisen
 Group=kaisen
 Type=forking
 RemainAfterExit=yes
-ExecStart=gpg-agent --daemon
-ExecStop=gpgconf --kill gpg-agent
+ExecStart=/opt/gpg-agent start
+ExecStop=/opt/gpg-agent stop
 
 [Install]
 WantedBy=multi-user.target
